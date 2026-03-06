@@ -1,21 +1,63 @@
 import requests
-import re
-import os
+from bs4 import BeautifulSoup
 
-url = "https://xn--42cah7d0cxcvbbb9x.com/"
+LINE_TOKEN = "nVV9K+Xb5Myd6hjkVWkkA/JbiDR4V+LUjfXS8mJfhMIQElpvcP/BTgtutIeA3Z52t82kcVeSQZOOU4MgM5+2OAiobJjhoRUSiEjX1fgkI5dt5E5Vc/bCyj3H4QkmRfl468zLrr5nkXwN9DblPIpx3QdB04t89/1O/w1cDnyilFU="
 
-try:
-    res = requests.get(url, headers={"User-Agent": "Mozilla/5.0"}, timeout=10)
-    html = res.text
-except:
-    html = ""
+def get_gold_price():
 
-buy_match = re.search(r'รับซื้อ\s*([\d,]+)', html)
-sell_match = re.search(r'ขายออก\s*([\d,]+)', html)
+    url = "https://xn--42cah7d0cxcvbbb9x.com/"
 
-if buy_match and sell_match:
-    buy = buy_match.group(1)
-    sell = sell_match.group(1)
+    headers = {
+        "User-Agent": "Mozilla/5.0"
+    }
+
+    r = requests.get(url, headers=headers)
+    soup = BeautifulSoup(r.text, "html.parser")
+
+    rows = soup.find_all("tr")
+
+    buy = None
+    sell = None
+
+    for row in rows:
+        text = row.get_text()
+
+        if "ทองคำแท่ง" in text:
+            cols = [c.strip() for c in row.get_text("\n").split("\n") if c.strip()]
+            buy = cols[1]
+            sell = cols[2]
+            break
+
+    return buy, sell
+
+
+def send_line(message):
+
+    url = "https://api.line.me/v2/bot/message/broadcast"
+
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {LINE_TOKEN}"
+    }
+
+    body = {
+        "messages":[
+            {
+                "type":"text",
+                "text":message
+            }
+        ]
+    }
+
+    r = requests.post(url, headers=headers, json=body)
+
+    print("Status:", r.status_code)
+    print(r.text)
+
+
+buy, sell = get_gold_price()
+
+if buy and sell:
 
     message = f"""Gold Price Update
 
@@ -25,28 +67,12 @@ Sell: {sell} THB
 
 Source: ราคาทอง.com
 """
+
+    print(message)
+
+    send_line(message)
+
 else:
-    message = "Gold Price Update\n\nUnable to detect gold price today."
+    print("❌ Could not detect gold price")
 
-LINE_TOKEN = os.getenv("nVV9K+Xb5Myd6hjkVWkkA/JbiDR4V+LUjfXS8mJfhMIQElpvcP/BTgtutIeA3Z52t82kcVeSQZOOU4MgM5+2OAiobJjhoRUSiEjX1fgkI5dt5E5Vc/bCyj3H4QkmRfl468zLrr5nkXwN9DblPIpx3QdB04t89/1O/w1cDnyilFU=")
 
-try:
-    requests.post(
-        "https://notify-api.line.me/api/notify",
-        headers={"Authorization": f"Bearer {LINE_TOKEN}"},
-        data={"message": message},
-        timeout=10
-    )
-    print("Message sent")
-
-except Exception as e:
-    print("LINE send failed:", e)
-
-response = requests.post(
-    "https://notify-api.line.me/api/notify",
-    headers={"Authorization": f"Bearer {LINE_TOKEN}"},
-    data={"message": message}
-)
-
-print(response.status_code)
-print(response.text)
