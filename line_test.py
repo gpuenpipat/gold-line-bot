@@ -1,12 +1,11 @@
 import requests
-from bs4 import BeautifulSoup
 import os
-import json
+from bs4 import BeautifulSoup
 
+# Get LINE token from GitHub Secret
 LINE_TOKEN = os.environ["LINE_TOKEN"]
-LINE_USER = os.environ["LINE_USER"]
 
-DATA_FILE = "last_price.json"
+PRICE_FILE = "last_price.txt"
 
 
 def get_gold_price():
@@ -30,88 +29,88 @@ def get_gold_price():
 
         if "ทองคำแท่ง" in text:
             cols = [c.strip() for c in row.get_text("\n").split("\n") if c.strip()]
-            buy = cols[1]
-            sell = cols[2]
+            buy = cols[1].replace(",", "")
+            sell = cols[2].replace(",", "")
             break
 
-    return buy, sell
+    return int(buy), int(sell)
 
 
 def load_last_price():
 
-    if not os.path.exists(DATA_FILE):
-        return None
+    try:
+        with open(PRICE_FILE, "r") as f:
+            data = f.read().split(",")
 
-    with open(DATA_FILE, "r") as f:
-        return json.load(f)
+            last_buy = int(data[0])
+            last_sell = int(data[1])
+
+            return last_buy, last_sell
+
+    except:
+        return None, None
 
 
 def save_price(buy, sell):
 
-    data = {
-        "buy": buy,
-        "sell": sell
-    }
+    with open(PRICE_FILE, "w") as f:
+        f.write(f"{buy},{sell}")
 
-    with open(DATA_FILE, "w") as f:
-        json.dump(data, f)
+
+def price_change(new, old):
+
+    if old is None:
+        return ""
+
+    diff = new - old
+
+    if diff > 0:
+        return f"⬆ +{diff}"
+    elif diff < 0:
+        return f"⬇ {diff}"
+    else:
+        return "→ 0"
 
 
 def send_line(message):
 
-    url = "https://api.line.me/v2/bot/message/push"
+    url = "https://notify-api.line.me/api/notify"
 
     headers = {
-        "Content-Type": "application/json",
         "Authorization": f"Bearer {LINE_TOKEN}"
     }
 
-    body = {
-        "to": LINE_USER,
-        "messages": [
-            {
-                "type": "text",
-                "text": message
-            }
-        ]
+    data = {
+        "message": message
     }
 
-    r = requests.post(url, headers=headers, json=body)
+    r = requests.post(url, headers=headers, data=data)
 
-    print("Status:", r.status_code)
+    print("LINE status:", r.status_code)
     print(r.text)
 
 
+# MAIN
+
 buy, sell = get_gold_price()
 
-if buy and sell:
+last_buy, last_sell = load_last_price()
 
-    last = load_last_price()
+buy_change = price_change(buy, last_buy)
+sell_change = price_change(sell, last_sell)
 
-    change = ""
-
-    if last:
-        if buy != last["buy"] or sell != last["sell"]:
-            change = "📈 Price changed"
-        else:
-            change = "➖ Price unchanged"
-    else:
-        change = "🆕 First record"
-
-    message = f"""Gold Price Update
+message = f"""
+Gold Price Update
 
 Gold Bar 96.5%
-Buy: {buy} THB
-Sell: {sell} THB
-
-{change}
+Buy: {buy:,} THB {buy_change}
+Sell: {sell:,} THB {sell_change}
 
 Source: ราคาทอง.com
 """
 
-    send_line(message)
+print(message)
 
-    save_price(buy, sell)
+send_line(message)
 
-else:
-    send_line("⚠️ Gold price not detected")
+save_price(buy, sell)
