@@ -1,7 +1,9 @@
 import requests
 from bs4 import BeautifulSoup
 
-LINE_TOKEN = "nVV9K+Xb5Myd6hjkVWkkA/JbiDR4V+LUjfXS8mJfhMIQElpvcP/BTgtutIeA3Z52t82kcVeSQZOOU4MgM5+2OAiobJjhoRUSiEjX1fgkI5dt5E5Vc/bCyj3H4QkmRfl468zLrr5nkXwN9DblPIpx3QdB04t89/1O/w1cDnyilFU="
+# LINE Messaging API credentials
+LINE_CHANNEL_TOKEN = "nVV9K+Xb5Myd6hjkVWkkA/JbiDR4V+LUjfXS8mJfhMIQElpvcP/BTgtutIeA3Z52t82kcVeSQZOOU4MgM5+2OAiobJjhoRUSiEjX1fgkI5dt5E5Vc/bCyj3H4QkmRfl468zLrr5nkXwN9DblPIpx3QdB04t89/1O/w1cDnyilFU="
+USER_ID = "YUb27b8ca8be36588af796a26e0a2b4af1"
 
 def get_gold_price():
 
@@ -12,6 +14,7 @@ def get_gold_price():
     }
 
     r = requests.get(url, headers=headers)
+
     soup = BeautifulSoup(r.text, "html.parser")
 
     rows = soup.find_all("tr")
@@ -33,14 +36,15 @@ def get_gold_price():
 
 def send_line(message):
 
-    url = "https://api.line.me/v2/bot/message/broadcast"
+    url = "https://api.line.me/v2/bot/message/push"
 
     headers = {
         "Content-Type": "application/json",
-        "Authorization": f"Bearer {LINE_TOKEN}"
+        "Authorization": f"Bearer {LINE_CHANNEL_TOKEN}"
     }
 
     body = {
+        "to": USER_ID,
         "messages":[
             {
                 "type":"text",
@@ -74,5 +78,3 @@ Source: ราคาทอง.com
 
 else:
     print("❌ Could not detect gold price")
-
-
