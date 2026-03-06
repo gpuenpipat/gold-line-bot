@@ -55,17 +55,27 @@ def save_price(buy, sell):
 
 def send_line(message):
 
-    url = "https://notify-api.line.me/api/notify"
+    url = "https://api.line.me/v2/bot/message/push"
 
     headers = {
+        "Content-Type": "application/json",
         "Authorization": f"Bearer {LINE_TOKEN}"
     }
 
-    data = {
-        "message": message
+    body = {
+        "to": LINE_USER_ID,
+        "messages": [
+            {
+                "type": "text",
+                "text": message
+            }
+        ]
     }
 
-    requests.post(url, headers=headers, data=data)
+    r = requests.post(url, headers=headers, json=body)
+
+    print("Status:", r.status_code)
+    print(r.text)
 
 
 buy, sell = get_gold_price()
