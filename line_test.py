@@ -3,8 +3,8 @@ from bs4 import BeautifulSoup
 import os
 import json
 
-LINE_TOKEN = os.environ["nVV9K+Xb5Myd6hjkVWkkA/JbiDR4V+LUjfXS8mJfhMIQElpvcP/BTgtutIeA3Z52t82kcVeSQZOOU4MgM5+2OAiobJjhoRUSiEjX1fgkI5dt5E5Vc/bCyj3H4QkmRfl468zLrr5nkXwN9DblPIpx3QdB04t89/1O/w1cDnyilFU="]
-LINE_USER = os.environ["Ub27b8ca8be36588af796a26e0a2b4af1"]
+LINE_TOKEN = os.environ["LINE_TOKEN"]
+LINE_USER = os.environ["LINE_USER"]
 
 DATA_FILE = "last_price.json"
 
