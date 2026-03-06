@@ -22,6 +22,8 @@ jobs:
         run: pip install requests beautifulsoup4
 
       - name: Run bot
+        env:
+          LINE_TOKEN: ${{ secrets.LINE_TOKEN }}
         run: python line_test.py
 
       - name: Commit updated price
