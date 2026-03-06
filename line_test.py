@@ -1,26 +1,38 @@
 import requests
 from bs4 import BeautifulSoup
 import os
+import json
 
 LINE_TOKEN = os.environ["LINE_TOKEN"]
 LINE_USER_ID = os.environ["LINE_USER_ID"]
 
 def get_gold_price():
+
     url = "https://xn--42cah7d0cxcvbbb9x.com/"
-    r = requests.get(url)
+    headers = {"User-Agent": "Mozilla/5.0"}
+
+    r = requests.get(url, headers=headers)
     soup = BeautifulSoup(r.text, "html.parser")
 
-    text = soup.get_text()
+    rows = soup.find_all("tr")
 
-    import re
+    buy = None
+    sell = None
 
-    buy_match = re.search(r"รับซื้อ\s*([\d,]+\.\d+)", text)
-    sell_match = re.search(r"ขายออก\s*([\d,]+\.\d+)", text)
+    for row in rows:
+        text = row.get_text()
 
-    buy = buy_match.group(1).replace(",", "")
-    sell = sell_match.group(1).replace(",", "")
+        if "ทองคำแท่ง" in text:
 
-    return float(buy), float(sell)
+            cols = [c.strip() for c in row.get_text("\n").split("\n") if c.strip()]
+
+            if len(cols) >= 3:
+                buy = cols[1].replace(",", "")
+                sell = cols[2].replace(",", "")
+
+            break
+
+    return int(float(buy)), int(float(sell))
 
 
 def send_line(message):
@@ -29,10 +41,10 @@ def send_line(message):
 
     headers = {
         "Content-Type": "application/json",
-        "Authorization": "Bearer " + LINE_TOKEN
+        "Authorization": f"Bearer {LINE_TOKEN}"
     }
 
-    data = {
+    body = {
         "to": LINE_USER_ID,
         "messages": [
             {
@@ -42,17 +54,39 @@ def send_line(message):
         ]
     }
 
-    requests.post(url, headers=headers, json=data)
+    r = requests.post(url, headers=headers, json=body)
+
+    print("LINE Status:", r.status_code)
+    print(r.text)
+
+
+def load_last_price():
+
+    try:
+        with open("last_price.json", "r") as f:
+            return json.load(f)
+    except:
+        return {"buy": 0, "sell": 0}
+
+
+def save_last_price(buy, sell):
+
+    with open("last_price.json", "w") as f:
+        json.dump({"buy": buy, "sell": sell}, f)
 
 
 buy, sell = get_gold_price()
 
-message = f"""
-Gold Price Update
+last = load_last_price()
+
+diff_buy = buy - last["buy"]
+diff_sell = sell - last["sell"]
+
+message = f"""Gold Price Update
 
 Gold Bar 96.5%
-Buy: {buy:,.0f} THB
-Sell: {sell:,.0f} THB
+Buy: {buy:,} THB ({diff_buy:+})
+Sell: {sell:,} THB ({diff_sell:+})
 
 Source: ราคาทอง.com
 """
@@ -60,3 +94,5 @@ Source: ราคาทอง.com
 print(message)
 
 send_line(message)
+
+save_last_price(buy, sell)
