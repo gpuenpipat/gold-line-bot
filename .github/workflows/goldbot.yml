@@ -1,14 +1,12 @@
 name: Gold Price Bot
 
+permissions:
+  contents: write
+
 on:
   schedule:
-    # 08:00 Thailand time
     - cron: '0 1 * * *'
-
-    # 13:00 Thailand time
     - cron: '0 6 * * *'
-
-    # 18:00 Thailand time
     - cron: '0 11 * * *'
 
   workflow_dispatch:
