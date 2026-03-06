@@ -2,9 +2,9 @@ name: Gold Price Bot
 
 on:
   schedule:
-    - cron: "0 1 * * *"
-    - cron: "0 6 * * *"
-    - cron: "0 11 * * *"
+    - cron: '0 1 * * *'
+    - cron: '0 6 * * *'
+    - cron: '0 11 * * *'
   workflow_dispatch:
 
 jobs:
@@ -12,12 +12,22 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
 
-      - uses: actions/setup-python@v4
-        with:
-          python-version: "3.10"
+    - name: Checkout repo
+      uses: actions/checkout@v4
 
-      - run: pip install -r requirements.txt
+    - name: Setup Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.10'
 
-      - run: python line_test.py
+    - name: Install packages
+      run: |
+        pip install requests
+        pip install beautifulsoup4
+
+    - name: Run bot
+      env:
+        LINE_TOKEN: ${{ secrets.LINE_TOKEN }}
+        LINE_USER: ${{ secrets.LINE_USER }}
+      run: python line_test.py
