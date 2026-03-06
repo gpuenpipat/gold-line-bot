@@ -1,80 +1,34 @@
 import requests
 from bs4 import BeautifulSoup
+import os
 
-# LINE Messaging API credentials
-LINE_CHANNEL_TOKEN = "nVV9K+Xb5Myd6hjkVWkkA/JbiDR4V+LUjfXS8mJfhMIQElpvcP/BTgtutIeA3Z52t82kcVeSQZOOU4MgM5+2OAiobJjhoRUSiEjX1fgkI5dt5E5Vc/bCyj3H4QkmRfl468zLrr5nkXwN9DblPIpx3QdB04t89/1O/w1cDnyilFU="
-USER_ID = "YUb27b8ca8be36588af796a26e0a2b4af1"
+URL = "https://xn--42cah7d0cxcvbbb9x.com/"
 
-def get_gold_price():
+response = requests.get(URL)
+soup = BeautifulSoup(response.text, "html.parser")
 
-    url = "https://xn--42cah7d0cxcvbbb9x.com/"
+price = soup.get_text()[:200]
 
-    headers = {
-        "User-Agent": "Mozilla/5.0"
-    }
+LINE_TOKEN = os.environ["nVV9K+Xb5Myd6hjkVWkkA/JbiDR4V+LUjfXS8mJfhMIQElpvcP/BTgtutIeA3Z52t82kcVeSQZOOU4MgM5+2OAiobJjhoRUSiEjX1fgkI5dt5E5Vc/bCyj3H4QkmRfl468zLrr5nkXwN9DblPIpx3QdB04t89/1O/w1cDnyilFU="]
+USER_ID = os.environ["Ub27b8ca8be36588af796a26e0a2b4af1"]
 
-    r = requests.get(url, headers=headers)
+headers = {
+    "Authorization": f"Bearer {LINE_TOKEN}",
+    "Content-Type": "application/json"
+}
 
-    soup = BeautifulSoup(r.text, "html.parser")
+data = {
+    "to": USER_ID,
+    "messages": [
+        {
+            "type": "text",
+            "text": f"Gold Price Update\n\n{price}"
+        }
+    ]
+}
 
-    rows = soup.find_all("tr")
-
-    buy = None
-    sell = None
-
-    for row in rows:
-        text = row.get_text()
-
-        if "ทองคำแท่ง" in text:
-            cols = [c.strip() for c in row.get_text("\n").split("\n") if c.strip()]
-            buy = cols[1]
-            sell = cols[2]
-            break
-
-    return buy, sell
-
-
-def send_line(message):
-
-    url = "https://api.line.me/v2/bot/message/push"
-
-    headers = {
-        "Content-Type": "application/json",
-        "Authorization": f"Bearer {LINE_CHANNEL_TOKEN}"
-    }
-
-    body = {
-        "to": USER_ID,
-        "messages":[
-            {
-                "type":"text",
-                "text":message
-            }
-        ]
-    }
-
-    r = requests.post(url, headers=headers, json=body)
-
-    print("Status:", r.status_code)
-    print(r.text)
-
-
-buy, sell = get_gold_price()
-
-if buy and sell:
-
-    message = f"""Gold Price Update
-
-Gold Bar 96.5%
-Buy: {buy} THB
-Sell: {sell} THB
-
-Source: ราคาทอง.com
-"""
-
-    print(message)
-
-    send_line(message)
-
-else:
-    print("❌ Could not detect gold price")
+requests.post(
+    "https://api.line.me/v2/bot/message/push",
+    headers=headers,
+    json=data
+)
