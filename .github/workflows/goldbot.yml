@@ -1,8 +1,16 @@
-name: Gold Bot
+name: Gold Price Bot
 
 on:
   schedule:
-    - cron: "0 1,6,11 * * *"
+    # 08:00 Thailand time
+    - cron: '0 1 * * *'
+
+    # 13:00 Thailand time
+    - cron: '0 6 * * *'
+
+    # 18:00 Thailand time
+    - cron: '0 11 * * *'
+
   workflow_dispatch:
 
 jobs:
@@ -10,15 +18,29 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v3
 
-      - uses: actions/setup-python@v4
-        with:
-          python-version: "3.10"
+    - name: Checkout repository
+      uses: actions/checkout@v3
 
-      - run: pip install requests beautifulsoup4
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
 
-      - run: python line_test.py
-        env:
-          LINE_TOKEN: ${{ secrets.LINE_TOKEN }}
-          LINE_USER_ID: ${{ secrets.LINE_USER_ID }}
+    - name: Install dependencies
+      run: |
+        pip install requests beautifulsoup4
+
+    - name: Run bot
+      env:
+        LINE_TOKEN: ${{ secrets.LINE_TOKEN }}
+        LINE_USER_ID: ${{ secrets.LINE_USER_ID }}
+      run: python line_test.py
+
+    - name: Commit updated price
+      run: |
+        git config --global user.name "github-actions"
+        git config --global user.email "actions@github.com"
+        git add last_price.txt
+        git commit -m "Update gold price" || echo "No changes"
+        git push
