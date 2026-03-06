@@ -10,8 +10,15 @@ res = requests.get(url)
 
 soup = BeautifulSoup(res.text, "html.parser")
 
-buy = soup.find("span", {"id": "goldbar_buy"}).text.strip()
-sell = soup.find("span", {"id": "goldbar_sell"}).text.strip()
+text = soup.get_text()
+
+import re
+
+buy_match = re.search(r"Buy\s*:\s*([\d,]+)", text)
+sell_match = re.search(r"Sell\s*:\s*([\d,]+)", text)
+
+buy = buy_match.group(1)
+sell = sell_match.group(1)
 
 buy_num = int(buy.replace(",", ""))
 sell_num = int(sell.replace(",", ""))
