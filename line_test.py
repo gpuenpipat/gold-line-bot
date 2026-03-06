@@ -41,3 +41,12 @@ try:
 
 except Exception as e:
     print("LINE send failed:", e)
+
+response = requests.post(
+    "https://notify-api.line.me/api/notify",
+    headers={"Authorization": f"Bearer {LINE_TOKEN}"},
+    data={"message": message}
+)
+
+print(response.status_code)
+print(response.text)
